@@ -57,3 +57,4 @@ Use MongoDB for long term
 - Start looking into machine / deep learning.
   - Algorithmic trading.
   - Load balancers (If needed)
+  - Get better with comments
