@@ -5,7 +5,6 @@ import json
 
 redis_client = get_redis_client()
 
-# Setup logger
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )

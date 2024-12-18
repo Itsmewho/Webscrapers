@@ -1,3 +1,2 @@
 def main():
-    # Just testing for now
-    print()
+    print("Under construction")

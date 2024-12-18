@@ -2,4 +2,3 @@
 *.pyc
 __pycache__/
 data
-admin_data.py

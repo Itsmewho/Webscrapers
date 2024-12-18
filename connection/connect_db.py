@@ -13,6 +13,7 @@ MONGO_DBNAME = os.getenv("MONGO_DBNAME")
 MONGO_COLLECTIONS = {
     "admin": os.getenv("MONGO_ADMIN"),
     "admin_log": os.getenv("MONGO_ADLOG"),
+    "audit_log": os.getenv("MONGO_AUDIT"),
 }
 
 # Setup logger

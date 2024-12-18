@@ -1,7 +1,7 @@
 # Mongo operations
 import logging
+from datetime import datetime
 from pymongo.errors import PyMongoError
-from connection.connect_db import get_collection
 from db.redis_operations import get_cache, set_cache, delete_cache
 from connection.connect_db import get_collection, MONGO_COLLECTIONS
 from utils.helpers import green, blue, red, reset

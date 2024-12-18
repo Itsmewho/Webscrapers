@@ -1,9 +1,11 @@
 # For auth functions
+import json
 import hashlib
 import bcrypt
 import requests
 import platform
 import subprocess
+from pathlib import Path
 from colorama import Style
 import os, re, time, getpass, msvcrt
 from models.all_models import RegisterModel
@@ -257,3 +259,15 @@ def sha256_encrypt(data: str) -> str:
 
 def bcrypt_hash(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+
+def store_log(data: dict, file_path: Path):
+
+    encrypted_data = encrypt_data(data)
+
+    # Ensure the data directory exists
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(file_path, "w") as file:
+        json.dump(encrypted_data, file, indent=4)
+    print(f"Admin log stored securely at {file_path}")

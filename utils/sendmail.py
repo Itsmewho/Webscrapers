@@ -1,12 +1,15 @@
 import os
+import logging
 import smtplib
 from email.mime.text import MIMEText
 from utils.helpers import green, red, reset
 from email.mime.multipart import MIMEMultipart
 from itsdangerous import URLSafeTimedSerializer
 
-
 serializer = URLSafeTimedSerializer(os.getenv("SECRET_KEY"))
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def generate_confirmation_token(email):
@@ -37,9 +40,9 @@ def send_email(to_email, subject, body):
         with smtplib.SMTP_SSL(smtp_host, smtp_port) as server:
             server.login(smtp_user, smtp_pass)
             server.sendmail(smtp_user, to_email, message.as_string())
-            print(green + "Confirmation email sent successfully!" + reset)
+            logger.info(green + f"Email sent to {to_email}" + reset)
     except Exception as e:
-        print(red + f"Error sending email: {e}" + reset)
+        logger.error(red + f"Error sending email: {e}" + reset)
 
 
 def email_confirmation(email):
