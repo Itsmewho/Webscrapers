@@ -19,7 +19,7 @@ Next BIG-project:
   - Only use top 20 / 30 companies
 
     - Check corresponding Balance sheet data.
-    - Check historic data. (5-years)
+    - Check historical data. (5-years)
     - Check for Names. (authoritarian names? No bullshit names like: 23435, 324235)
 
   - Use due diligence. (Sort out balance sheet data)
@@ -36,6 +36,7 @@ Next BIG-project:
           - Scrape for economic events data and dates.
             - Check historical data and trendlines. (5-10year max? (That's a lot of data!))
             - Check if companie x,y,z is just started to make money in the last year or something. (Use eval of Due diligence)
+            - Check for conflict of intrest. (congress)
 
 - Display all major futures?
 - Display all major FOREX-pairs
