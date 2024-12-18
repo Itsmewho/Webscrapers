@@ -18,15 +18,22 @@ Next BIG-project:
 
   - Only use top 20 / 30 companies
 
+    - Check market cap.
     - Check corresponding Balance sheet data.
     - Check historical data. (5-years)
     - Check for Names. (authoritarian names? No bullshit names like: 23435, 324235)
 
-  - Use due diligence. (Sort out balance sheet data)
+  - Due diligence. (Sort out balance sheet data)
+
+    - Add ratio's (PE, PEG, Solvency, PB ect,. )
+    - Add a 'separate', with ratio and without due diligence.
+
+      - Check perfomance with historical data.
+
     - Sort on Peter Lynch system. (adjusted)
     - Sort on Joal greenbalt system. (adjusted)
     - Sort on Warren's system.
-    - Sort on my own system.
+    - Sort on own system.
       - Check for overlapping data.
         - If overlapping found?!
           - Scrape for shareholders.(partculier / institutional)
