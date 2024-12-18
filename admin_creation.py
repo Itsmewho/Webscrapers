@@ -27,6 +27,8 @@ def create_admin():
         "email": email,
         "password": password,
         "sec_password": sec_password,
+        "account_locked": False,
+        "2fa_method": True,
     }
 
     print(green + "\n--- Admin Data ---")

@@ -60,7 +60,7 @@ def login():
         token = create_jwt(str(admin["_id"]), admin["email"])
 
         # 2FA Flow
-        if admin.get("2fa_method") == "email":
+        if admin.get("2fa_method") == True:
             print(blue + "Sending 2FA code to your email..." + reset)
             try:
                 # Initiate 2FA flow using Flask backend
