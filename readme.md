@@ -18,8 +18,9 @@ Next BIG-project:
 
   - Only use top 20 / 30 companies
 
-    - Check corresponding Balance sheet data
-    - Check for Names (authoritarian names? No bullshit names like: 23435, 324235 stuff like that)
+    - Check corresponding Balance sheet data.
+    - Check historic data. (5-years)
+    - Check for Names. (authoritarian names? No bullshit names like: 23435, 324235)
 
   - Use due diligence. (Sort out balance sheet data)
     - Sort on Peter Lynch system. (adjusted)
@@ -29,7 +30,7 @@ Next BIG-project:
       - Check for overlapping data.
         - If overlapping found?!
           - Scrape for shareholders.(partculier / institutional)
-          - Insider trade's
+          - Insider trade's.
           - Scrape for news items.
             - Sentiment checker.
           - Scrape for economic events data and dates.
