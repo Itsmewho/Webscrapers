@@ -1,5 +1,11 @@
 #
 
+First learn, how to play before going to the next!
+
+#
+
+#
+
 Next BIG-project:
 
 #
