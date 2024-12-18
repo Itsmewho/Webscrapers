@@ -1,6 +1,6 @@
 #
 
-First learn, how to play before going to the next!
+First learn to play before going to the next!
 
 #
 
