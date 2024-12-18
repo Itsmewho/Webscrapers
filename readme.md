@@ -44,12 +44,12 @@ Next BIG-project:
             - Check if companie x,y,z is just started to make money in the last year or something. (Use eval of Due diligence)
             - Check for conflict of intrest. (congress)
 
+  - Show notification if intrest is found with PDF-summary. (open / ignore)
+
 - Display all major futures?
 - Display all major FOREX-pairs
 - Display VIX vs Bonds.
 - Display commodities.
-
-  - Show notification if intrest is found with PDF-summary. (open / ignore)
 
 Use redis for collection, sorting, processing data.
 Use MongoDB for long term
