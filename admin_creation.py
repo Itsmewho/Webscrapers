@@ -46,9 +46,11 @@ def create_admin():
 
     encrypted_admin_data = {
         "name": sha256_encrypt(name),
-        "email": sha256_encrypt(email),
+        "email": email,  # To mutch hassle to encrypt for sending email.
         "password": bcrypt_hash(password),
         "sec_password": bcrypt_hash(sec_password),
+        "account_locked": False,
+        "2fa_method": True,
     }
 
     system_info = get_system_info()
@@ -79,7 +81,7 @@ if __name__ == "__main__":
             system_info = get_system_info()
 
             log_file_path = Path("./data/admin_log.json")
-            store_log(system_info, log_file_path)
+            # store_log(system_info, log_file_path)
 
             print(
                 green

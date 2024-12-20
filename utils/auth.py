@@ -9,9 +9,10 @@ from pathlib import Path
 from colorama import Style
 import os, re, time, getpass, msvcrt
 from models.all_models import RegisterModel
-from db.db_operations import find_documents
+from db.db_operations import find_documents, update_documents
 from pydantic import ValidationError, BaseModel
 from utils.helpers import red, blue, reset, input_quit_handle
+from utils.sendmail import send_email
 
 
 def input_masking(prompt, delay=0.02, typing_effect=False, color=None):
@@ -178,20 +179,29 @@ def get_system_info():
 
 
 def normalize_system_info(info):
-
-    # Sorting system info for login auth,.
-
-    normalized = info.copy()
-    # Sort mac_addresses
-    normalized["mac_addresses"] = sorted(normalized.get("mac_addresses", []))
-    # Sort drives by serial numbers
-    normalized["drives"] = sorted(
-        normalized.get("drives", []), key=lambda d: d.get("serial", "")
-    )
-    # Convert latitude and longitude to rounded floats
-    normalized["latitude"] = round(float(normalized.get("latitude", "0")), 4)
-    normalized["longitude"] = round(float(normalized.get("longitude", "0")), 4)
-    return normalized
+    if isinstance(info, list):  # If it's a list, normalize each entry
+        return [
+            {
+                "mac_addresses": sorted(entry.get("mac_addresses", [])),
+                "drives": sorted(
+                    entry.get("drives", []), key=lambda d: d.get("serial", "")
+                ),
+                "latitude": round(float(entry.get("latitude", "0")), 4),
+                "longitude": round(float(entry.get("longitude", "0")), 4),
+                "motherboard_serial": entry.get("motherboard_serial", ""),
+            }
+            for entry in info
+        ]
+    elif isinstance(info, dict):  # If it's a single dictionary, normalize it
+        return {
+            "mac_addresses": sorted(info.get("mac_addresses", [])),
+            "drives": sorted(info.get("drives", []), key=lambda d: d.get("serial", "")),
+            "latitude": round(float(info.get("latitude", "0")), 4),
+            "longitude": round(float(info.get("longitude", "0")), 4),
+            "motherboard_serial": info.get("motherboard_serial", ""),
+        }
+    else:
+        raise TypeError("Input must be a dictionary or a list of dictionaries")
 
 
 def validation_field(field_name: str, value: str, model=RegisterModel):
@@ -271,3 +281,14 @@ def store_log(data: dict, file_path: Path):
     with open(file_path, "w") as file:
         json.dump(encrypted_data, file, indent=4)
     print(f"Admin log stored securely at {file_path}")
+
+
+def lock_account(admin):
+    update_documents(
+        "admin", {"name": admin["name"]}, {"$set": {"account_locked": True}}
+    )
+    send_email(
+        admin["email"],
+        "Admin Account Locked",
+        "Your admin account has been locked due to failed login attempts or suspicious activity.",
+    )

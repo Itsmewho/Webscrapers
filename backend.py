@@ -1,5 +1,5 @@
 # Connections web?
-import random, bcrypt, jwt, uuid, redis
+import random, bcrypt
 from utils.helpers import reset, red
 from utils.session import verify_session
 from flask import Flask, jsonify, request
@@ -13,7 +13,13 @@ from utils.sendmail import (
     serializer,
 )
 
+
 app = Flask(__name__)
+
+
+@app.route("/")
+def home():
+    return "Flask server is running!"
 
 
 @app.route("/confirm/2fa/<token>", methods=["GET"])
@@ -62,7 +68,7 @@ def send_2fa():
         send_email(
             to_email=email,
             subject="Your 2FA Code",
-            body=f"Your 2FA code is {code}. Please enter it to complete the login process.",
+            body=f"Your 2FA code is {code} Please enter it to complete the login process.",
         )
         return jsonify(
             {"success": True, "message": "2FA code sent successfully", "code": code}
@@ -73,7 +79,6 @@ def send_2fa():
 
 @app.route("/verify-2fa", methods=["POST"])
 def verify_2fa():
-
     data = request.json
     code = data.get("code")
     expected_code = data.get("expected_code")
@@ -89,44 +94,10 @@ def verify_2fa():
             400,
         )
 
-    email = data.get("email")
-    if not email:
-        return jsonify({"success": False, "message": "Email is required"}), 400
-
-    user = find_documents("admin", {"email": email})
-    if not user:
-        return jsonify({"success": False, "message": "User not found"}), 404
-
-    user = user[0]  # Get the first result
-
-    # Check if the account is locked
-    if user.get("account_locked", False):
-        log_audit_event(
-            user_id=str(user["_id"]),
-            email=user["email"],
-            action="ACCOUNT_LOCKED_ATTEMPT",
-            details={"method": "email", "ip_address": request.remote_addr},
-        )
-        return jsonify({"success": False, "message": "Account is locked"}), 403
-
-    # Verify the 2FA code
     if str(code) == str(expected_code):
-        log_audit_event(
-            user_id=str(user["_id"]),
-            email=user["email"],
-            action="2FA_VERIFIED",
-            details={"method": "email", "ip_address": request.remote_addr},
-        )
         return jsonify({"success": True, "message": "2FA code verified"})
-
-    # Log failed attempts
-    log_audit_event(
-        user_id=str(user["_id"]),
-        email=user["email"],
-        action="2FA_FAILED",
-        details={"method": "email", "ip_address": request.remote_addr},
-    )
-    return jsonify({"success": False, "message": "Invalid 2FA code"}), 401
+    else:
+        return jsonify({"success": False, "message": "Invalid 2FA code"}), 401
 
 
 @app.route("/lock-account", methods=["POST"])
@@ -270,4 +241,16 @@ def rate_limited_login():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    import logging
+
+    logging.basicConfig(
+        filename="flask_server.log",
+        level=logging.DEBUG,
+        format="%(asctime)s %(levelname)s %(message)s",
+    )
+    # # for decorating postman --->
+    # for rule in app.url_map.iter_rules():
+    #     print(
+    #         f"Endpoint: {rule.endpoint} | Methods: {', '.join(rule.methods)} | URL: {rule}"
+    #     )
+    app.run(debug=True, port=5000)

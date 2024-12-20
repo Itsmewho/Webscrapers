@@ -23,7 +23,7 @@ def log_audit_event(user_id, email, action, details=None):
             "details": details or {},
             "timestamp": datetime.now(),
         }
-        find_documents["audit_logs"].insert_one(audit_log)
+        find_documents["audit_log"].insert_one(audit_log)
         logger.info(
             green + f"Audit log created for user {email}, action: {action}" + reset
         )
@@ -38,5 +38,5 @@ def get_audit_logs(user_id=None, action=None):
     if action:
         query["action"] = action
 
-    logs = find_documents["audit_logs"].find(query).sort("timestamp", -1)
+    logs = find_documents["audit_log"].find(query).sort("timestamp", -1)
     return list(logs)

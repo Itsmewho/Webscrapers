@@ -1,9 +1,10 @@
 import os
 import uuid
-import jwt
+import jwt as pyjwt
+from flask import jsonify
 from datetime import datetime, timedelta
 from db.redis_operations import redis_client
-from utils.helpers import red, green, reset
+from utils.helpers import green, reset
 
 
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -36,14 +37,14 @@ def create_jwt(user_id, email):
         "exp": datetime.now() + timedelta(seconds=900),  # Expiration time
         "iat": datetime.now(),
     }
-    return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+    token = pyjwt.encode(payload, SECRET_KEY, algorithm="HS256")
+    return token
 
 
 def verify_jwt(token):
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        return payload["user_id"], payload["email"]
-    except jwt.ExpiredSignatureError:
-        return None  # Token expired
-    except jwt.InvalidTokenError:
-        return None  # Invalid token
+        decoded_token = pyjwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+    except pyjwt.ExpiredSignatureError:
+        return jsonify({"success": False, "message": "Token has expired."}), 401
+    except pyjwt.InvalidTokenError:
+        return jsonify({"success": False, "message": "Invalid token."}), 401
