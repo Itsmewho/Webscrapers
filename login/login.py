@@ -1,7 +1,8 @@
 import bcrypt, requests
 from utils.session import create_jwt
 from utils.auth import input_masking
-from db.db_operations import find_documents, update_documents
+from db.db_operations import find_documents
+from connection.connect_redis import redis_client
 from scrapers.scraper_menu import scraper_menu
 from utils.sendmail import send_email
 from utils.auth import (
@@ -26,8 +27,17 @@ def login():
     typing_effect(green + "Welcome to Login" + reset)
 
     identifier = input_quit_handle(green + "Enter your email: ").lower()
-    password = input_masking(red + "Enter your password: ")
     hashed_name = sha256_encrypt(identifier)
+
+    if redis_client.get(f"rate_limit:login:{hashed_name}"):
+        typing_effect(red + "Too many login attempts! Please try again later." + reset)
+        sleep()
+        clear()
+        return
+
+    redis_client.set(f"rate_limit:login:{hashed_name}", "1", ex=30)
+
+    password = input_masking(red + "Enter your password: ")
 
     admin = find_documents("admin", {"name": hashed_name})  # lol
     if not admin:

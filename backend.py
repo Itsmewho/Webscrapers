@@ -234,7 +234,6 @@ def rate_limited_login():
             429,
         )
 
-    # Set rate limit (e.g., 1 attempt per 30 seconds)
     redis_client.set(f"rate_limit:login:{email}", "1", ex=30)
 
     return

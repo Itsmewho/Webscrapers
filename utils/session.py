@@ -7,7 +7,7 @@ from db.redis_operations import redis_client
 from utils.helpers import green, reset
 
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SESSION_KEY = os.getenv("SESSION_KEY")
 
 
 def create_session(user_id):
@@ -37,13 +37,13 @@ def create_jwt(user_id, email):
         "exp": datetime.now() + timedelta(seconds=900),  # Expiration time
         "iat": datetime.now(),
     }
-    token = pyjwt.encode(payload, SECRET_KEY, algorithm="HS256")
+    token = pyjwt.encode(payload, SESSION_KEY, algorithm="HS256")
     return token
 
 
 def verify_jwt(token):
     try:
-        decoded_token = pyjwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        decoded_token = pyjwt.decode(token, SESSION_KEY, algorithms=["HS256"])
     except pyjwt.ExpiredSignatureError:
         return jsonify({"success": False, "message": "Token has expired."}), 401
     except pyjwt.InvalidTokenError:

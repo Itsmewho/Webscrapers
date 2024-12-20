@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from db.db_operations import find_documents
+from db.db_operations import find_documents, insert_document
 from utils.helpers import red, green, reset
 
 #
@@ -23,7 +23,7 @@ def log_audit_event(user_id, email, action, details=None):
             "details": details or {},
             "timestamp": datetime.now(),
         }
-        find_documents["audit_log"].insert_one(audit_log)
+        insert_document("audit_log", audit_log)
         logger.info(
             green + f"Audit log created for user {email}, action: {action}" + reset
         )
@@ -39,4 +39,4 @@ def get_audit_logs(user_id=None, action=None):
         query["action"] = action
 
     logs = find_documents["audit_log"].find(query).sort("timestamp", -1)
-    return list(logs)
+    return sorted(logs, key=lambda x: x["timestamp"], reverse=True)
