@@ -59,8 +59,8 @@ def login():
             "Admin Account Locked",
             "Someone is trying to login,..",
         )
-        # sleep()
-        # clear()
+        sleep()
+        clear()
         return
 
     token = create_jwt(str(admin["_id"]), admin["email"])
@@ -91,8 +91,8 @@ def login():
         return
     else:
         typing_effect(green + "System verified" + reset)
-        # sleep()
-        # clear()
+        sleep()
+        clear()
 
     scraper_menu(admin)
 
