@@ -2,6 +2,7 @@ import bcrypt, requests
 from utils.session import create_jwt
 from utils.auth import input_masking
 from db.db_operations import find_documents
+from db.audit import log_audit_event
 from connection.connect_redis import redis_client
 from scrapers.scraper_menu import scraper_menu
 from utils.sendmail import send_email
@@ -28,23 +29,21 @@ def login():
 
     identifier = input_quit_handle(green + "Enter your email: ").lower()
     hashed_name = sha256_encrypt(identifier)
-
-    if redis_client.get(f"rate_limit:login:{hashed_name}"):
-        typing_effect(red + "Too many login attempts! Please try again later." + reset)
-        sleep()
-        clear()
-        return
-
-    redis_client.set(f"rate_limit:login:{hashed_name}", "1", ex=30)
-
-    password = input_masking(red + "Enter your password: ")
-
     admin = find_documents("admin", {"name": hashed_name})  # lol
     if not admin:
         typing_effect(red + "No account found with the provided credentials!" + reset)
         sleep()
         clear()
         return
+    if redis_client.get(f"rate_limit:login:{hashed_name}"):
+        typing_effect(red + "Too many login attempts! Please try again later." + reset)
+        sleep()
+        clear()
+        return
+
+    redis_client.set(f"rate_limit:login:{hashed_name}", "5", ex=30)
+
+    password = input_masking(red + f"Enter your password:{reset} ")
 
     admin = admin[0]
 
@@ -60,13 +59,22 @@ def login():
             "Admin Account Locked",
             "Someone is trying to login,..",
         )
-        sleep()
-        clear()
+        # sleep()
+        # clear()
         return
 
     token = create_jwt(str(admin["_id"]), admin["email"])
 
-    handle_2fa(admin, token)
+    log_audit_event(
+        user_id=str(admin["_id"]),
+        email=admin["email"],
+        action="Login",
+        details={"token": token},
+    )
+
+    if not handle_2fa(admin, token):
+        typing_effect(red + "Login process terminated due to 2FA failure." + reset)
+        return
 
     system_info = get_system_info()
     system_log = find_documents("admin_log", {})
@@ -83,8 +91,8 @@ def login():
         return
     else:
         typing_effect(green + "System verified" + reset)
-        sleep()
-        clear()
+        # sleep()
+        # clear()
 
     scraper_menu(admin)
 
@@ -122,11 +130,7 @@ def handle_2fa(admin, token):
             )
             verification_response.raise_for_status()
             if verification_response.json().get("success"):
-                print(
-                    green
-                    + "2FA verification successful!\nChecking system credentials,.."
-                    + reset
-                )
+                print(green + "2FA verification successful!" + reset)
                 return True
             else:
                 typing_effect(red + "Invalid 2FA code. Login denied." + reset)
@@ -137,11 +141,7 @@ def handle_2fa(admin, token):
             )
             return False
     else:
-        typing_effect(
-            blue
-            + "2FA is not enabled for this account.\nChecking system credentials,."
-            + reset
-        )
+        typing_effect(blue + "2FA is not enabled for this account." + reset)
         sleep()
         clear()
         return True

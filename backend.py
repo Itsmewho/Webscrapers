@@ -62,6 +62,11 @@ def send_2fa():
     if not email:
         return jsonify({"success": False, "message": "Email is required"}), 400
 
+    user = find_documents("admin", {"email": email})
+    if not user:
+        return jsonify({"success": False, "message": "User not found"}), 404
+
+    user_id = str(user[0]["_id"])
     code = random.randint(100000, 999999)
     try:
         # Send the 2FA code via email
@@ -70,10 +75,25 @@ def send_2fa():
             subject="Your 2FA Code",
             body=f"Your 2FA code is {code} Please enter it to complete the login process.",
         )
+
+        user_id = email  # Encrypt email to get the user ID equivalent
+        log_audit_event(
+            user_id=user_id,
+            email=email,
+            action="2FA Code Sent",
+            details={"code": code},  # Add the code to the details for audit purposes
+        )
+
         return jsonify(
             {"success": True, "message": "2FA code sent successfully", "code": code}
         )
     except Exception as e:
+        log_audit_event(
+            user_id=user_id,
+            email=email,
+            action="2FA Code Sending Failed",
+            details={"error": str(e)},
+        )
         return jsonify({"success": False, "message": str(e)}), 500
 
 
