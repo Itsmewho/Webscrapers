@@ -1,5 +1,5 @@
 # frequent use
-import os, time, subprocess
+import os, time
 from datetime import datetime
 from colorama import Style, Fore
 

@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def set_cache(key, value, expiry=3600):
+
     try:
         redis_client.setex(key, expiry, json.dumps(value))
         logger.info(green + f"Cache set for key: {key}" + reset)
@@ -20,6 +21,7 @@ def set_cache(key, value, expiry=3600):
 
 
 def get_cache(key):
+
     try:
         value = redis_client.get(key)
         if value:
@@ -33,6 +35,7 @@ def get_cache(key):
 
 
 def delete_cache(key):
+
     try:
         redis_client.delete(key)
         logger.info(green + f"Cache cleared for key: {key}" + reset)

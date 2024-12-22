@@ -12,19 +12,21 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def generate_confirmation_token(email):
-    return serializer.dumps(email, salt="email-confirm-salt")
+def generate_confirmation_token(email, salt="email-confirm-salt"):
+
+    return serializer.dumps(email, salt=salt)
 
 
-def confirm_token(token, expiration=300):
+def confirm_token(token, salt="email-confirm-salt", expiration=300):
     try:
-        email = serializer.loads(token, salt="email-confirm-salt", max_age=expiration)
+        email = serializer.loads(token, salt=salt, max_age=expiration)
     except Exception:
         return None
     return email
 
 
 def send_email(to_email, subject, body):
+
     try:
         smtp_host = os.getenv("SMTP_HOST")
         smtp_port = os.getenv("SMTP_PORT")
@@ -46,6 +48,7 @@ def send_email(to_email, subject, body):
 
 
 def email_confirmation(email):
+
     token = generate_confirmation_token(email)
     confirmation_link = f"http://127.0.0.1:5000/confirm/2fa/{token}"
     send_email(

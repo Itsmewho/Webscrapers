@@ -28,6 +28,7 @@ redis_client = redis.Redis(
 
 
 def get_redis_client():
+
     try:
         # Test connection
         redis_client.ping()

@@ -10,6 +10,7 @@ DATA_FOLDER = Path("./data")
 
 
 def load_json(file_path: Path) -> list:
+
     if not file_path.exists():
         print(red + f"File {file_path} does not exists!" + reset)
         return []
@@ -24,6 +25,7 @@ def load_json(file_path: Path) -> list:
 
 
 def seed_collection(collection_key: str, data: list):
+
     if not data:
         print(blue + f"No data to seed for collection: {collection_key}" + reset)
         return
@@ -33,6 +35,7 @@ def seed_collection(collection_key: str, data: list):
 
 
 def main():
+
     for collection_key in MONGO_COLLECTIONS.keys():
         json_file = DATA_FOLDER / f"{collection_key}.json"
 

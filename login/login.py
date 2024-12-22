@@ -25,35 +25,24 @@ from utils.helpers import (
 
 
 def login():
+
     typing_effect(green + "Welcome to Login" + reset)
 
     identifier = input_quit_handle(green + "Enter your email: ").lower()
+    password = input_masking(red + f"Enter your password:{reset} ")
     hashed_name = sha256_encrypt(identifier)
+
     admin = find_documents("admin", {"name": hashed_name})  # lol
     if not admin:
         typing_effect(red + "No account found with the provided credentials!" + reset)
         sleep()
         clear()
         return
-    if redis_client.get(f"rate_limit:login:{hashed_name}"):
-        typing_effect(red + "Too many login attempts! Please try again later." + reset)
-        sleep()
-        clear()
-        return
-
-    redis_client.set(f"rate_limit:login:{hashed_name}", "5", ex=30)
-
-    password = input_masking(red + f"Enter your password:{reset} ")
 
     admin = admin[0]
 
-    if not bcrypt.checkpw(password.encode(), admin["password"].encode()):
-        typing_effect(red + "Incorrect password! Your account is locked." + reset)
-        lock_account(admin)
-        return
-
     if admin.get("account_locked", True):
-        typing_effect(red + "Your account is locked. Contact support." + reset)
+        typing_effect(red + "Your account is locked." + reset)
         send_email(
             admin["email"],
             "Admin Account Locked",
@@ -62,6 +51,25 @@ def login():
         sleep()
         clear()
         return
+
+    attempts = redis_client.incr(f"rate_limit:login:{hashed_name}")
+    if attempts == 1:
+        redis_client.expire(f"rate_limit:login:{hashed_name}", 300)
+
+    if attempts > 5:  # Allow up to 5 attempts
+        typing_effect(red + "Too many login attempts! Please try again later." + reset)
+        sleep()
+        clear()
+        return
+
+    # Verify password here (for rate limiter +=)
+    if not bcrypt.checkpw(password.encode(), admin["password"].encode()):
+        typing_effect(red + "Incorrect password! Your account is locked." + reset)
+        lock_account(admin)
+        return
+
+    # Reset rate limit (If login succ6)
+    redis_client.delete(f"rate_limit:login:{hashed_name}")
 
     token = create_jwt(str(admin["_id"]), admin["email"])
 
@@ -98,6 +106,7 @@ def login():
 
 
 def handle_2fa(admin, token):
+
     if admin.get("2fa_method") is True:
         typing_effect(blue + "Sending 2FA code to your email..." + reset)
         try:

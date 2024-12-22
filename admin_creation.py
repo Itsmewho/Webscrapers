@@ -16,6 +16,7 @@ DATA_DIR.mkdir(exist_ok=True)
 
 
 def create_admin():
+
     typing_effect("Admin Creation!")
     name = input_quit_handle(green + f"Enter name:")
     email = input_quit_handle(green + f"Enter Email:")

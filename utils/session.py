@@ -11,6 +11,7 @@ SESSION_KEY = os.getenv("SESSION_KEY")
 
 
 def create_session(user_id):
+
     session_token = str(uuid.uuid4())
     redis_client.set(
         green + f"session: {session_token}" + reset, user_id, ex=900
@@ -19,6 +20,7 @@ def create_session(user_id):
 
 
 def verify_session(session_token):
+
     user_id = redis_client.expire(green + f"session: {session_token}" + reset)
     if user_id:
         redis_client.expire(green + f"session: {session_token}" + reset, 900)
@@ -27,10 +29,12 @@ def verify_session(session_token):
 
 
 def destroy_session(session_token):
+
     redis_client.delete(green + f"session: {session_token}" + reset)
 
 
 def create_jwt(user_id, email):
+
     payload = {
         "user_id": user_id,
         "email": email,
@@ -42,6 +46,7 @@ def create_jwt(user_id, email):
 
 
 def verify_jwt(token):
+
     try:
         decoded_token = pyjwt.decode(token, SESSION_KEY, algorithms=["HS256"])
     except pyjwt.ExpiredSignatureError:

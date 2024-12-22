@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def insert_document(collection_key: str, document: dict, cache_key: str = None):
+
     try:
         collection_name = MONGO_COLLECTIONS.get(collection_key)
         if not collection_name:
@@ -45,6 +46,7 @@ def find_documents(
     cache_key: str = None,
     expiry: int = 3600,
 ):
+
     try:
         # Check Redis cache first
         if cache_key:
@@ -99,6 +101,7 @@ def update_documents(
     multiple: bool = False,
     cache_key: str = None,
 ):
+
     try:
         collection_name = MONGO_COLLECTIONS.get(collection_key)
         if not collection_name:
@@ -140,6 +143,7 @@ def update_documents(
 def delete_documents(
     collection_key: str, query: dict, multiple: bool = False, cache_key: str = None
 ):
+
     try:
         collection_name = MONGO_COLLECTIONS.get(collection_key)
         if not collection_name:

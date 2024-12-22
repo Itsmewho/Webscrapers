@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_db():
+
     try:
         client = MongoClient(MONGO_URI)
         db = client[MONGO_DBNAME]
