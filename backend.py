@@ -1,6 +1,5 @@
 # Connections web?
 import random
-from datetime import datetime
 from utils.helpers import reset, red
 from utils.session import verify_session
 from flask import Flask, jsonify, request
@@ -13,7 +12,6 @@ from login.unlock_account import unlock_account, confirm_unlock_token
 from utils.sendmail import (
     confirm_token,
     send_email,
-    serializer,
 )
 
 

@@ -72,6 +72,7 @@ def reset_terminal():
     typing_effect(blue + "Reset your password" + reset)
 
     email = input_quit_handle(green + "Enter your email: ")
+    # May add prompt for secoundair password here:
 
     rate_limit_key = f"rate_limit:reset:{email}"
     if redis_client.get(rate_limit_key):
