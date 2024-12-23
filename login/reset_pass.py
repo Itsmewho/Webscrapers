@@ -1,6 +1,8 @@
 import os, bcrypt
 from utils.auth import input_masking
+from db.audit import log_audit_event
 from itsdangerous import URLSafeTimedSerializer
+from connection.connect_redis import redis_client
 from db.db_operations import find_documents, update_documents
 from utils.sendmail import send_email
 from utils.helpers import (
@@ -14,16 +16,14 @@ from utils.helpers import (
     clear,
 )
 
-
 serializerreset = URLSafeTimedSerializer(os.getenv("RESET_KEY"))
 
 
 def generate_confirmation_token(email, salt="password-reset-salt"):
-
     return serializerreset.dumps(email, salt=salt)
 
 
-def confirm_token(token, salt="password-reset-salt", expiration=300):
+def confirm_reset_token(token, salt="password-reset-salt", expiration=300):
     try:
         email = serializerreset.loads(token, salt=salt, max_age=expiration)
     except Exception:
@@ -54,7 +54,7 @@ def send_reset_email(email):
 
 def reset_password(token, new_password):
 
-    email = confirm_token(token, salt="password-reset-salt")
+    email = confirm_reset_token(token, salt="password-reset-salt")
     if not email:
         return {"success": False, "message": "Invalid or expired token"}
 
@@ -73,43 +73,53 @@ def reset_terminal():
 
     email = input_quit_handle(green + "Enter your email: ")
 
-    # rate_limit_key = f"rate_limit:reset:{email}"
-    # if redis_client.get(rate_limit_key):
-    #     typing_effect(red + "Too many attempts. Please try again later." + reset)
-    #     sleep()
-    #     clear()
-    #     return
+    rate_limit_key = f"rate_limit:reset:{email}"
+    if redis_client.get(rate_limit_key):
+        typing_effect(red + "Too many attempts. Please try again later." + reset)
+        sleep()
+        clear()
+        return
 
-    # attempts = redis_client.incr(rate_limit_key)
-    # if attempts == 1:
-    #     redis_client.expire(rate_limit_key, 300)  # Change if everyting works
+    attempts = redis_client.incr(rate_limit_key)
+    if attempts == 1:
+        redis_client.expire(rate_limit_key, 300)
 
-    # if attempts > 50:  # Change if everyting works
-    #     typing_effect(
-    #         red + "Too many attempts. Please try again after 5 minutes." + reset
-    #     )
-    #     sleep()
-    #     clear()
-    #     return
+    if attempts > 5:
+        typing_effect(
+            red + "Too many attempts. Please try again after 5 minutes." + reset
+        )
+        sleep()
+        clear()
+        return
 
     result = send_reset_email(email)
     typing_effect(result["message"])
 
     if result["success"]:
         while True:
-            token = input_quit_handle("Enter the reset token from your email: ").strip()
+            token = input_quit_handle(
+                "Enter the code from your email:", lowercase=False
+            ).strip()
 
-            # Validate the token
-            email = confirm_token(token, salt="password-reset-salt")
+            email = confirm_reset_token(token, salt="password-reset-salt")
             if not email:
                 typing_effect(
                     red + "Invalid or expired token. Please try again." + reset
                 )
                 continue
 
+            admin = find_documents("admin", {"email": email})
+            if not admin:
+                typing_effect(red + "User not found. Please try again." + reset)
+                return
+
+            admin = admin[0]
+
             while True:
-                resetpass = input_masking("Enter your new password: ")
-                new_password = input_masking("Confirm your new password: ")
+                resetpass = input_masking(red + "Enter your new password: " + reset)
+                new_password = input_masking(
+                    red + "Confirm your new password: " + reset
+                )
 
                 if resetpass != new_password:
                     typing_effect(
@@ -125,6 +135,18 @@ def reset_terminal():
 
                 reset_result = reset_password(token, new_password)
                 typing_effect(reset_result["message"])
+
+                # Log success or failure of password reset
+                action = (
+                    "Password reset success"
+                    if reset_result["success"]
+                    else "Password reset failed"
+                )
+                log_audit_event(
+                    user_id=str(admin["_id"]),
+                    email=admin["email"],
+                    action=action,
+                )
 
                 if reset_result["success"]:
                     typing_effect(

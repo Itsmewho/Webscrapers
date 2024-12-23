@@ -39,11 +39,14 @@ def typing_effect(*message, delay=0.03):
     print()
 
 
-def input_quit_handle(prompt, reset=Style.RESET_ALL):
+def input_quit_handle(prompt, reset=Style.RESET_ALL, lowercase=False):
     # Print in color
     print(prompt, reset, end="", flush=True)
     # Type in 'normal', color.
-    user_input = input().strip().lower()
+    user_input = input().strip()
+
+    if lowercase:
+        user_input = user_input.lower()
 
     if user_input in {"q", "quit"}:
         handle_quit()

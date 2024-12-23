@@ -8,8 +8,8 @@ from bson.objectid import ObjectId
 from db.db_operations import find_documents
 from db.audit import log_audit_event
 from connection.connect_redis import redis_client
-from login.reset_pass import reset_password
-from login.unlock_account import unlock_account
+from login.reset_pass import reset_password, confirm_reset_token
+from login.unlock_account import unlock_account, confirm_unlock_token
 from utils.sendmail import (
     confirm_token,
     send_email,
@@ -131,7 +131,7 @@ def verify_2fa():
 def reset_password_route(token):
     if request.method == "GET":
         # Validate the token
-        email = confirm_token(token, salt="password-reset-salt", expiration=300)
+        email = confirm_reset_token(token, salt="password-reset-salt", expiration=600)
         if not email:
             return (
                 jsonify({"success": False, "message": "Invalid or expired token"}),
@@ -143,7 +143,8 @@ def reset_password_route(token):
                 {
                     "success": True,
                     "message": "Token is valid. Please submit your new password.",
-                    "token": token,
+                    "email": email,
+                    "code": token,
                 }
             ),
             200,
@@ -158,7 +159,8 @@ def reset_password_route(token):
                 400,
             )
 
-        email = confirm_token(token, salt="password-reset-salt")
+        # Validate the token again in case of tampering
+        email = confirm_reset_token(token, salt="password-reset-salt")
         if not email:
             return (
                 jsonify({"success": False, "message": "Invalid or expired token"}),
@@ -167,64 +169,54 @@ def reset_password_route(token):
 
         response = reset_password(token, new_password)
 
-        if response["success"]:
-            log_audit_event(
-                user_id=email,
-                email=email,
-                action="PASSWORD_RESET",
-                details={
-                    "ip_address": request.remote_addr,
-                    "timestamp": datetime.now(),
-                },
-            )
-
         status_code = 200 if response["success"] else 400
         return jsonify(response), status_code
 
 
-@app.route("/unlock-account/<token>", methods=["POST"])
+@app.route("/unlock-account/<token>", methods=["GET", "POST"])
 def unlock_account_route(token):
-
-    try:
-        email = confirm_token(token, salt="unlock-account-salt")
+    if request.method == "GET":
+        # Validate the token
+        email = confirm_unlock_token(token, salt="unlock-account-salt")
         if not email:
             return (
                 jsonify({"success": False, "message": "Invalid or expired token"}),
                 400,
             )
 
-        response = unlock_account(token)
-        # Log success or failure
-        if response["success"]:
-            log_audit_event(
-                user_id=email,
-                email=response.get("email", "Unknown"),
-                action="ACCOUNT_UNLOCKED",
-                details={"method": "email_token", "ip_address": request.remote_addr},
-            )
-        else:
-            log_audit_event(
-                user_id=email,
-                email=response.get("email", "Unknown"),
-                action="ACCOUNT_UNLOCK_FAILED",
-                details={
-                    "reason": response.get("message"),
-                    "method": "email_token",
-                    "ip_address": request.remote_addr,
-                },
-            )
-
-        status_code = 200 if response["success"] else 400
-        return jsonify(response), status_code
-
-    except Exception as e:
-        log_audit_event(
-            user_id=email,
-            email=response.get("email", "Unknown"),
-            action="SERVER_ERROR",
-            details={"error": str(e), "method": "unlock_account_route"},
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": "Token is valid. Please confirm account unlocking.",
+                    "code": token,
+                }
+            ),
+            200,
         )
-        return jsonify({"success": False, "message": "Server error occurred"}), 500
+
+    if request.method == "POST":
+        try:
+            email = confirm_unlock_token(token, salt="unlock-account-salt")
+            if not email:
+                return (
+                    jsonify({"success": False, "message": "Invalid or expired token"}),
+                    400,
+                )
+
+            admin = find_documents("admin", {"email": email})
+            if not admin:
+                return jsonify({"success": False, "message": "User not found"}), 404
+
+            response = unlock_account(email)
+            action = (
+                "ACCOUNT_UNLOCKED" if response["success"] else "ACCOUNT_UNLOCK_FAILED"
+            )
+
+            status_code = 200 if response["success"] else 400
+            return jsonify(response), status_code
+        except Exception as e:
+            return jsonify({"success": False, "message": "Server error occurred"}), 500
 
 
 @app.route("/protected", methods=["GET"])

@@ -1,4 +1,5 @@
 import os
+from db.audit import log_audit_event
 from itsdangerous import URLSafeTimedSerializer
 from connection.connect_redis import redis_client
 from db.db_operations import find_documents, update_documents
@@ -22,7 +23,7 @@ def generate_confirmation_token(email, salt="unlock-account-salt"):
     return serializerunlock.dumps(email, salt=salt)
 
 
-def confirm_token(token, salt="unlock-account-salt", expiration=300):
+def confirm_unlock_token(token, salt="unlock-account-salt", expiration=300):
     try:
         email = serializerunlock.loads(token, salt=salt, max_age=expiration)
     except Exception:
@@ -53,8 +54,9 @@ def send_unlock_account(email):
 
 def unlock_account(token):
 
-    email = confirm_token(token, salt="unlock-account-salt")
+    email = confirm_unlock_token(token, salt="unlock-account-salt")
     if not email:
+        print("Failed to confirm token")
         return {"success": False, "message": "Invalid or expired token"}
 
     try:
@@ -79,7 +81,7 @@ def unlock_terminal():
     # Increment attempts
     attempts = redis_client.incr(rate_limit_key)
     if attempts == 1:
-        redis_client.expire(rate_limit_key, 300)  # Expires in 5 minutes
+        redis_client.expire(rate_limit_key, 300)
 
     if attempts > 5:
         typing_effect(
@@ -88,13 +90,26 @@ def unlock_terminal():
         sleep()
         return
 
-    result = send_unlock_account(email)
+    admin = find_documents("admin", {"email": email})
+    if not admin:
+        typing_effect(red + "User not found. Please try again." + reset)
+        return
 
+    admin = admin[0]
+
+    result = send_unlock_account(email)
     typing_effect(result["message"])
 
     if result["success"]:
+        admin = find_documents("admin", {"email": email})
+        if not admin:
+            typing_effect(red + "User not found. Please try again." + reset)
+            return
+
         while True:
-            token = input_quit_handle("Enter the token you received in your email: ")
+            token = input_quit_handle(
+                "Enter the code you received in your email: ", lowercase=False
+            ).strip()
             unlock_result = unlock_account(token)
             print(unlock_result["message"])
 
@@ -106,6 +121,17 @@ def unlock_terminal():
             else:
                 print(red + "Invalid token, please try again." + reset)
                 sleep()
+
+            admin = admin[0]
+            action = (
+                "Account unlock success"
+                if unlock_result["success"]
+                else "Account unlock failed"
+            )
+            log_audit_event(
+                user_id=str(admin["_id"]), email=admin["email"], action=action
+            )
+
     else:
         typing_effect(
             red

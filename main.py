@@ -36,7 +36,7 @@ def main():
         elif action == "3":
             clear()
             unlock_terminal()
-        elif action == "6":
+        elif action == "4":
             handle_quit()
             break
         else:
