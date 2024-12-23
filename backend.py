@@ -40,26 +40,6 @@ def confirm_2fa_email(token):
         return jsonify({"success": False, "message": "Invalid or expired token"}), 400
 
 
-@app.route("/generate-token", methods=["POST"])
-def generate_token():
-
-    data = request.json
-    email = data.get("email")
-    if not email:
-        return jsonify({"success": False, "message": "Email is required"}), 400
-
-    if redis_client.get(f"rate_limit:{email}"):
-        return (
-            jsonify(
-                {"success": False, "message": "Too many requests, try again later"}
-            ),
-            429,
-        )
-
-    token = serializer.dumps(email, salt="email-confirm-salt")
-    return jsonify({"success": True, "token": token})
-
-
 @app.route("/send-2fa", methods=["POST"])
 def send_2fa():
 
