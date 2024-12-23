@@ -47,6 +47,9 @@ def send_email(to_email, subject, body):
         logger.error(red + f"Error sending email: {e}" + reset)
 
 
+# 2fa is to small to give a sepparate file
+
+
 def email_confirmation(email):
 
     token = generate_confirmation_token(email)

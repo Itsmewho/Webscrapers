@@ -127,31 +127,59 @@ def verify_2fa():
         return jsonify({"success": False, "message": "Invalid 2FA code"}), 401
 
 
-@app.route("/reset-password/<token>", methods=["POST"])
+@app.route("/reset-password/<token>", methods=["GET", "POST"])
 def reset_password_route(token):
+    if request.method == "GET":
+        # Validate the token
+        email = confirm_token(token, salt="password-reset-salt", expiration=300)
+        if not email:
+            return (
+                jsonify({"success": False, "message": "Invalid or expired token"}),
+                400,
+            )
 
-    data = request.json
-    new_password = data.get("new_password")
-    if not new_password:
-        return jsonify({"success": False, "message": "New password is required"}), 400
-
-    email = confirm_token(token, salt="password-reset-salt")
-    if not email:
-        return jsonify({"success": False, "message": "Invalid or expired token"}), 400
-
-    response = reset_password(token, new_password)
-
-    # Log only if the reset is successful
-    if response["success"]:
-        log_audit_event(
-            user_id=email,
-            email=email,
-            action="PASSWORD_RESET",
-            details={"ip_address": request.remote_addr, "timestamp": datetime.now()},
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": "Token is valid. Please submit your new password.",
+                    "token": token,
+                }
+            ),
+            200,
         )
 
-    status_code = 200 if response["success"] else 400
-    return jsonify(response), status_code
+    if request.method == "POST":
+        data = request.json
+        new_password = data.get("new_password")
+        if not new_password:
+            return (
+                jsonify({"success": False, "message": "New password is required"}),
+                400,
+            )
+
+        email = confirm_token(token, salt="password-reset-salt")
+        if not email:
+            return (
+                jsonify({"success": False, "message": "Invalid or expired token"}),
+                400,
+            )
+
+        response = reset_password(token, new_password)
+
+        if response["success"]:
+            log_audit_event(
+                user_id=email,
+                email=email,
+                action="PASSWORD_RESET",
+                details={
+                    "ip_address": request.remote_addr,
+                    "timestamp": datetime.now(),
+                },
+            )
+
+        status_code = 200 if response["success"] else 400
+        return jsonify(response), status_code
 
 
 @app.route("/unlock-account/<token>", methods=["POST"])
@@ -191,8 +219,8 @@ def unlock_account_route(token):
 
     except Exception as e:
         log_audit_event(
-            user_id="N/A",
-            email="Unknown",
+            user_id=email,
+            email=response.get("email", "Unknown"),
             action="SERVER_ERROR",
             details={"error": str(e), "method": "unlock_account_route"},
         )

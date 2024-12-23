@@ -1,10 +1,8 @@
+import os
+from itsdangerous import URLSafeTimedSerializer
 from connection.connect_redis import redis_client
 from db.db_operations import find_documents, update_documents
-from utils.sendmail import (
-    send_email,
-    generate_confirmation_token,
-    confirm_token,
-)
+from utils.sendmail import send_email
 from utils.helpers import (
     input_quit_handle,
     typing_effect,
@@ -15,6 +13,21 @@ from utils.helpers import (
     reset,
     clear,
 )
+
+serializerunlock = URLSafeTimedSerializer(os.getenv("UNLOCK_KEY"))
+
+
+def generate_confirmation_token(email, salt="unlock-account-salt"):
+
+    return serializerunlock.dumps(email, salt=salt)
+
+
+def confirm_token(token, salt="unlock-account-salt", expiration=300):
+    try:
+        email = serializerunlock.loads(token, salt=salt, max_age=expiration)
+    except Exception:
+        return None
+    return email
 
 
 def send_unlock_account(email):
